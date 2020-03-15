@@ -1,11 +1,24 @@
 import React, { Component } from 'react';
 import { graphql } from 'react-apollo';
+import { flowRight as compose } from 'lodash';
 
-import { getAuthorsQuery } from '../queries/queries';
+import { getAuthorsQuery, addBookMutation } from '../queries/queries';
 
 class AddBook extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      name: '',
+      genre: '',
+      authorId: ''
+    };
+  }
+
   displayAuthors() {
-    let data = this.props.data;
+    //When binding the query, we are passing the option to compose(), name: "getAuthorsQuery"
+    let data = this.props.getAuthorsQuery;
+    // console.log(this.props);
+
     if (data.loading) {
       return <option disabled>Loading books...</option>;
     } else {
@@ -19,28 +32,52 @@ class AddBook extends Component {
     }
   }
 
+  submitForm(e) {
+    e.preventDefault();
+    this.props.addBookMutation({
+      variables: {
+        name: this.state.name,
+        genre: this.state.genre,
+        authorId: this.state.authorId
+      }
+    });
+  }
+
   render() {
     return (
-      <form id='add-book'>
-        <div className='field'>
+      <form id="add-book" onSubmit={e => this.submitForm(e)}>
+        <div className="field">
           <label>Book name:</label>
-          <input type='text' />
+          <input
+            type="text"
+            onChange={e => this.setState({ name: e.target.value })}
+          />
         </div>
-        <div className='field'>
+
+        <div className="field">
           <label>Genre:</label>
-          <input type='text' />
+          <input
+            type="text"
+            onChange={e => this.setState({ genre: e.target.value })}
+          />
         </div>
-        <div className='field'>
+
+        <div className="field">
           <label>Author:</label>
-          <select>
+          <select onChange={e => this.setState({ authorId: e.target.value })}>
             <option>Select author</option>
             {this.displayAuthors()}
           </select>
         </div>
+
         <button>+</button>
       </form>
     );
   }
 }
 
-export default graphql(getAuthorsQuery)(AddBook);
+//Bind multiple queries to a component
+export default compose(
+  graphql(getAuthorsQuery, { name: 'getAuthorsQuery' }),
+  graphql(addBookMutation, { name: 'addBookMutation' })
+)(AddBook);
